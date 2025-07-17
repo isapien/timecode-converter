@@ -1,17 +1,64 @@
 {
-  "name": "@pietrop/timecode-converter",
+  "name": "timecode-converter",
   "version": "1.0.0",
-  "description": "",
-  "main": "src/index.js",
+  "description": "A dependency-free timecode converter module for broadcast timecodes",
   "type": "module",
-  "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules npx jest",
-    "publish:public": " npm publish --access public",
-    "publish:dry:run": "npm publish  --dry-run"
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    }
   },
-  "author": "",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "pre-publish": "pnpm run format:check && pnpm run typecheck && pnpm run test:run && pnpm run build",
+    "prepublishOnly": "pnpm run pre-publish",
+    "publish:public": "pnpm publish --access public",
+    "publish:dry:run": "pnpm publish --dry-run"
+  },
+  "keywords": [
+    "timecode",
+    "broadcast",
+    "video",
+    "conversion",
+    "SMPTE",
+    "fps",
+    "frames"
+  ],
+  "author": "Jordan Burke <jordan.burke@gmail.com>",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/isapien/timecode-converter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/isapien/timecode-converter/issues"
+  },
+  "homepage": "https://github.com/isapien/timecode-converter#readme",
   "devDependencies": {
-    "jest": "^27.2.5"
+    "@types/node": "^20.11.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "prettier": "^3.2.0",
+    "tsup": "^8.0.1",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.4"
   }
 }

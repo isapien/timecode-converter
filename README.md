@@ -3,7 +3,16 @@
 <!-- _One liner + link to confluence page_
 _Screenshot of UI - optional_ -->
 
-A dependency free `timecode-converter` mode module utility. That can be used either client side or server side. Originally extracted form [`@bbc/react-transcript-editor/packages/util/timecode-converter`](https://github.com/bbc/react-transcript-editor/tree/master/packages/util/timecode-converter), and original code domain logic from [@bevand10](https://github.com/bevand10) 🙌
+A modernized TypeScript fork of the original timecode-converter. This is a dependency-free `timecode-converter` module utility that can be used either client side or server side. 
+
+Originally extracted from [`@bbc/react-transcript-editor/packages/util/timecode-converter`](https://github.com/bbc/react-transcript-editor/tree/master/packages/util/timecode-converter), and original code domain logic from [@bevand10](https://github.com/bevand10) 🙌
+
+### What's New in This Fork
+- 🚀 **TypeScript** - Full TypeScript support with strict mode
+- 📦 **Modern Build** - Dual ESM/CJS builds using tsup
+- 🧪 **Vitest** - Fast, modern testing framework
+- 🔧 **pnpm** - Fast, disk space efficient package manager
+- ✨ **Improved DX** - Better tooling and type safety
 
 <details><summary>Why publish it as a standalone module?</summary>
 
@@ -19,18 +28,18 @@ And besides that not being ideal, or good practice, not only it can cause proble
 _How to build and run the code/app_ -->
 
 ```
-git clone git@github.com:pietrop/timecode-converter.git
+git clone git@github.com:jordanburke/timecode-converter.git
 ```
 ```
 cd timecode-converter
 ```
 ```
-npm install
+pnpm install
 ```
 ## Usage
 Some example, see the test files more more 
 ```js
-import { secondsToTimecode, timecodeToSeconds, shortTimecode } from "@pietrop/ timecode-converter";
+import { secondsToTimecode, timecodeToSeconds, shortTimecode } from "timecode-converter";
 
 const result1 = secondsToTimecode(600);
 // '00:10:00:00'
@@ -83,16 +92,24 @@ nvm use
 ## Build
 
 <!-- _How to run build_ -->
-_NA_
+
+```
+pnpm build
+```
+
+This creates dual format builds in the `dist` folder:
+- CommonJS (.js) 
+- ESM (.mjs)
+- TypeScript definitions (.d.ts)
 ## Tests
 
 <!-- _How to carry out tests_ -->
 
 ```
-npm run test
+pnpm test
 ```
 
-see [Jest & ECMAScript Modules](https://jestjs.io/docs/ecmascript-modules) in their docs, for more info.
+Tests are now using [Vitest](https://vitest.dev/) for a modern testing experience.
 
 
 ## Deployment
@@ -101,9 +118,9 @@ see [Jest & ECMAScript Modules](https://jestjs.io/docs/ecmascript-modules) in th
 
 To publish to npm 
 ```
-npm run publish:public
+pnpm publish:public
 ```
 and for pre-flight checks 🔦🛫 
 ```
-npm run publish:dry:run
+pnpm publish:dry:run
 ```
