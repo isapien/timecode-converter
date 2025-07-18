@@ -13,6 +13,10 @@ Originally extracted from [`@bbc/react-transcript-editor/packages/util/timecode-
 - 🧪 **Vitest** - Fast, modern testing framework
 - 🔧 **pnpm** - Fast, disk space efficient package manager
 - ✨ **Improved DX** - Better tooling and type safety
+- 🎯 **Required Frame Rate** - Frame rate must be explicitly specified (no defaults)
+- 🔧 **Enhanced Precision** - Improved floating-point precision handling
+- ⚡ **Better API Design** - Clear, explicit parameters for professional use
+- 🎬 **Drop-Frame Support** - Full SMPTE drop-frame timecode support for 29.97 and 59.94 fps
 
 <details><summary>Why publish it as a standalone module?</summary>
 
@@ -41,18 +45,135 @@ Some example, see the test files more more
 ```js
 import { secondsToTimecode, timecodeToSeconds, shortTimecode } from "timecode-converter";
 
-const result1 = secondsToTimecode(600);
+// Frame rate is REQUIRED for all functions
+const fps = 25; // PAL: 25 fps
+const ntscFps = 29.97; // NTSC: 29.97 fps
+
+// Converting seconds to timecode (non-drop frame)
+const result1 = secondsToTimecode(600, fps);
 // '00:10:00:00'
 
-const result2 = timecodeToSeconds( '00:10:00:00');
+// Converting timecode to seconds
+const result2 = timecodeToSeconds('00:10:00:00', fps);
 // 600
 
-const result3 = shortTimecode(0)
-// '00:00:00'
+// Note: When passing seconds as a number, frame rate is optional
+const result3 = timecodeToSeconds(600); // No frame rate needed for numeric input
+// 600
 
-const result4 = shortTimecode( '00:10:00:00')
-//  '00:10:00'
+// Different frame rates produce different results
+const result4 = timecodeToSeconds('00:00:01:12', 24); // 24 fps
+// 1.5 (1 second + 12 frames at 24fps = 0.5 seconds)
+
+const result5 = secondsToTimecode(1.5, 29.97); // 29.97 fps non-drop
+// '00:00:01:14'
+
+// Short timecode (without frames)
+const result6 = shortTimecode('00:10:00:00', fps);
+// '00:10:00'
+
+const result7 = shortTimecode(600, 30); // 30 fps
+// '00:10:00'
+
+// 🎬 DROP-FRAME TIMECODE SUPPORT (NEW!)
+// Drop-frame uses semicolon (;) before frames: HH:MM:SS;FF
+
+// Auto-detect drop-frame from format
+const dropFrameSeconds = timecodeToSeconds('01:00:00;00', 29.97);
+// 3600 seconds (exact)
+
+// Smart auto-detection for drop-frame generation
+const autoDropFrame = secondsToTimecode(3600, 29.97); // Auto-detects need for drop-frame
+// '01:00:00;00' (uses drop-frame automatically for long durations)
+
+const shortDuration = secondsToTimecode(30, 29.97); // Short duration
+// '00:00:30:00' (uses non-drop for durations < 1 minute)
+
+// Override auto-detection
+const forcedNonDrop = secondsToTimecode(3600, 29.97, false);
+// '01:00:00:00' (forced non-drop frame)
+
+// Validate timecodes
+import { validateTimecode } from "timecode-converter";
+
+const validation = validateTimecode('25:00:00:00', 25);
+// { valid: false, errors: ["Hours cannot exceed 23"] }
+
+const dropFrameValidation = validateTimecode('00:01:00;01', 29.97);
+// { valid: false, errors: ["Invalid drop-frame timecode. Frames 00 and 01 don't exist at minute 1"] }
+
+// Check if a timecode is drop-frame format
+import { isDropFrameTimecode, isDropFrameRate } from "timecode-converter";
+
+isDropFrameTimecode('01:00:00;00') // true
+isDropFrameTimecode('01:00:00:00') // false
+isDropFrameRate(29.97) // true
+isDropFrameRate(25) // false
 ```
+## Drop-Frame Timecode Support
+
+This library now fully supports both **drop-frame** and **non-drop frame** timecode formats.
+
+### Understanding Drop-Frame Timecode
+
+Drop-frame timecode is used in NTSC video (29.97 fps) to compensate for the fractional frame rate. It works by dropping frame numbers (not actual frames) at specific intervals:
+- Drops frame numbers 00 and 01 at the start of each minute
+- EXCEPT every 10th minute (00, 10, 20, 30, 40, 50)
+- This keeps timecode aligned with real-world time
+
+### Drop-Frame Format
+- **Non-drop frame**: `HH:MM:SS:FF` (uses colons)
+- **Drop-frame**: `HH:MM:SS;FF` (uses semicolon before frames)
+
+### Auto-Detection
+The library provides smart auto-detection for drop-frame:
+
+**When parsing timecodes:**
+```js
+// Drop-frame format is auto-detected from semicolon
+timecodeToSeconds('01:00:00;00', 29.97) // 3600.00 seconds (drop-frame)
+timecodeToSeconds('01:00:00:00', 29.97) // 3600.00 seconds (non-drop)
+```
+
+**When generating timecodes:**
+```js
+// For 29.97/59.94 fps, drop-frame is auto-selected for durations ≥ 1 minute
+secondsToTimecode(3600, 29.97)    // '01:00:00;00' (auto drop-frame)
+secondsToTimecode(30, 29.97)      // '00:00:30:00' (auto non-drop)
+secondsToTimecode(3600, 29.97, false) // '01:00:00:00' (force non-drop)
+```
+
+### Generating Drop-Frame Timecode
+```js
+// Generate drop-frame format with third parameter
+secondsToTimecode(3600, 29.97, true)  // '01:00:00;00'
+secondsToTimecode(3600, 29.97, false) // '01:00:00:00'
+secondsToTimecode(3600, 29.97)        // '01:00:00:00' (default: non-drop)
+```
+
+### Supported Frame Rates
+Drop-frame is only valid for:
+- **29.97 fps** - Standard NTSC (drops 2 frames/minute)
+- **59.94 fps** - Double-rate NTSC (drops 4 frames/minute)
+
+Other frame rates (24, 25, 30, etc.) will ignore the drop-frame parameter.
+
+### Usage Warnings
+The library will warn you about potentially incorrect usage:
+
+1. **Using drop-frame format with wrong frame rate:**
+   ```js
+   timecodeToSeconds('01:00:00;00', 25)
+   // ⚠️ Warning: Drop-frame timecode format used with non-drop-frame rate 25 fps
+   ```
+
+2. **Using 29.97/59.94 fps without drop-frame for long durations:**
+   ```js
+   secondsToTimecode(3600, 29.97, false)
+   // ⚠️ Warning: For durations over 1 hour, consider using drop-frame format
+   // After 1 hour(s), drift is approximately 4 seconds
+   ```
+
 ## System Architecture
 
 <!-- _High level overview of system architecture_ -->

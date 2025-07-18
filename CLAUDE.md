@@ -69,10 +69,11 @@ The module accepts various input formats and normalizes them:
 - `ss` - Just seconds as number or string
 
 ### Frame Rate Handling
-- Default frame rate is 25 fps (PAL standard)
-- Both `secondsToTimecode` and `timecodeToSeconds` accept an optional `framePerSeconds` parameter
-- Frame-accurate conversion using normalisation to 14ms boundaries for HTML5 player compatibility
-- Note: 29.97 fps drop-frame is not currently supported (see TODO in timecodeToSeconds.js)
+- **Frame rate is REQUIRED** - All functions require explicit frame rate specification
+- No default frame rate - must be specified for every conversion
+- Supports any frame rate: 24, 25, 29.97, 30, 50, 59.94, etc.
+- Frame-accurate conversion with enhanced floating-point precision handling
+- Note: 29.97 fps drop-frame is not currently supported (see TODO in timecodeToSeconds.ts)
 
 ### ES6 Module Configuration
 - Uses native ES6 modules (`"type": "module"` in package.json)

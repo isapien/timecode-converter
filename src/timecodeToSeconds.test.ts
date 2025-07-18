@@ -3,7 +3,7 @@ import timecodeToSecondsHelper from "./timecodeToSeconds"
 
 describe("timecodeToSecondsHelper", () => {
   it("Should convert basic timecode with default fps", () => {
-    const result = timecodeToSecondsHelper("00:00:10:00")
+    const result = timecodeToSecondsHelper("00:00:10:00", 25)
     expect(result).toEqual(10)
   })
 
@@ -12,7 +12,7 @@ describe("timecodeToSecondsHelper", () => {
     expect(result).toEqual(1)
   })
 
-  it("Should handle frames correctly", () => {
+  it("Should handle frames correctly at 25 fps", () => {
     const result = timecodeToSecondsHelper("00:00:00:25", 25)
     expect(result).toEqual(1)
   })

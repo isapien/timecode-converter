@@ -13,10 +13,16 @@ const isOneDigit = (str: string): boolean => str.length === 1
  */
 const padTimeToTimecode = (time: string | number): TimecodeFormat | number => {
   if (typeof time === "string") {
-    switch (countColon(time)) {
+    // Check if it's drop-frame format (contains semicolon)
+    const isDropFrame = time.includes(";")
+
+    // For drop-frame, count all separators (: and ;)
+    const separatorCount = isDropFrame ? time.split(/[:;]/).length : countColon(time)
+
+    switch (separatorCount) {
       case 4:
         // is already in timecode format
-        // hh:mm:ss:ff
+        // hh:mm:ss:ff or hh:mm:ss;ff
         return time
       case 2: {
         // m:ss or mm:ss
