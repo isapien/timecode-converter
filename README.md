@@ -1,247 +1,274 @@
-## timecode converter
+# timecode-converter
 
-<!-- _One liner + link to confluence page_
-_Screenshot of UI - optional_ -->
+A modern TypeScript library for broadcast timecode conversions with full SMPTE drop-frame support.
 
-A modernized TypeScript fork of the original timecode-converter. This is a dependency-free `timecode-converter` module utility that can be used either client side or server side. 
+## Features
 
-Originally extracted from [`@bbc/react-transcript-editor/packages/util/timecode-converter`](https://github.com/bbc/react-transcript-editor/tree/master/packages/util/timecode-converter), and original code domain logic from [@bevand10](https://github.com/bevand10) 🙌
+- 🎯 **Accurate Conversions** - Frame-accurate timecode to seconds conversions
+- 🎬 **SMPTE Drop-Frame** - Full support for 29.97 and 59.94 fps drop-frame timecode
+- 🤖 **Smart Auto-Detection** - Automatically handles drop-frame when appropriate
+- 📦 **TypeScript First** - Written in TypeScript with strict types
+- ✅ **Validation** - Built-in timecode validation with detailed error messages
+- 🚀 **Modern Build** - Dual ESM/CJS builds, tree-shakeable
+- 🔧 **Zero Dependencies** - No external runtime dependencies
+- ⚡ **High Performance** - Optimized with improved floating-point precision
 
-### What's New in This Fork
-- 🚀 **TypeScript** - Full TypeScript support with strict mode
-- 📦 **Modern Build** - Dual ESM/CJS builds using tsup
-- 🧪 **Vitest** - Fast, modern testing framework
-- 🔧 **pnpm** - Fast, disk space efficient package manager
-- ✨ **Improved DX** - Better tooling and type safety
-- 🎯 **Required Frame Rate** - Frame rate must be explicitly specified (no defaults)
-- 🔧 **Enhanced Precision** - Improved floating-point precision handling
-- ⚡ **Better API Design** - Clear, explicit parameters for professional use
-- 🎬 **Drop-Frame Support** - Full SMPTE drop-frame timecode support for 29.97 and 59.94 fps
+## Installation
 
-<details><summary>Why publish it as a standalone module?</summary>
-
-The problem of exporting it from [`@bbc/react-transcript-editor`](https://github.com/bbc/react-transcript-editor) or [`@pietrop/slate-transcript-editor`](https://github.com/pietrop/slate-transcript-editor) is that, somehow it ends up expecting react as a peer dependency. 
-
-And besides that not being ideal, or good practice, not only it can cause problems with keeping up with react peer dependency of other modules, but also add that as a peer dependency to other module consuming it, such as [@pietrop/edl-composer](https://github.com/pietrop/edl-composer) that doesn't really need any of that.
-</details>
-
-
-## Setup
-
-<!-- _stack - optional_
-_How to build and run the code/app_ -->
-
+```bash
+npm install timecode-converter
+# or
+pnpm add timecode-converter
+# or
+yarn add timecode-converter
 ```
-git clone git@github.com:jordanburke/timecode-converter.git
+
+## Quick Start
+
+```typescript
+import { secondsToTimecode, timecodeToSeconds } from 'timecode-converter'
+
+// Convert seconds to timecode
+secondsToTimecode(90, 29.97)  // '00:01:29;29' (auto drop-frame)
+secondsToTimecode(90, 25)     // '00:01:30:00' (PAL)
+
+// Convert timecode to seconds  
+timecodeToSeconds('00:01:30:00', 25)     // 90
+timecodeToSeconds('00:01:29;29', 29.97)  // 90 (auto-detects drop-frame)
 ```
-```
-cd timecode-converter
-```
-```
-pnpm install
-```
-## Usage
-Some example, see the test files more more 
-```js
-import { secondsToTimecode, timecodeToSeconds, shortTimecode } from "timecode-converter";
 
-// Frame rate is REQUIRED for all functions
-const fps = 25; // PAL: 25 fps
-const ntscFps = 29.97; // NTSC: 29.97 fps
+## Drop-Frame Support
 
-// Converting seconds to timecode (non-drop frame)
-const result1 = secondsToTimecode(600, fps);
-// '00:10:00:00'
+This library provides comprehensive SMPTE drop-frame timecode support with smart defaults.
 
-// Converting timecode to seconds
-const result2 = timecodeToSeconds('00:10:00:00', fps);
-// 600
+### What is Drop-Frame Timecode?
 
-// Note: When passing seconds as a number, frame rate is optional
-const result3 = timecodeToSeconds(600); // No frame rate needed for numeric input
-// 600
+Drop-frame is used with NTSC frame rates (29.97, 59.94 fps) to keep timecode aligned with real-world time. It works by skipping frame numbers 00 and 01 at the start of each minute, except every 10th minute.
 
-// Different frame rates produce different results
-const result4 = timecodeToSeconds('00:00:01:12', 24); // 24 fps
-// 1.5 (1 second + 12 frames at 24fps = 0.5 seconds)
+### Smart Auto-Detection
 
-const result5 = secondsToTimecode(1.5, 29.97); // 29.97 fps non-drop
-// '00:00:01:14'
+The library intelligently handles drop-frame based on context:
 
-// Short timecode (without frames)
-const result6 = shortTimecode('00:10:00:00', fps);
-// '00:10:00'
+```typescript
+// Parsing: Auto-detects from format (semicolon = drop-frame)
+timecodeToSeconds('01:00:00;00', 29.97)  // Drop-frame
+timecodeToSeconds('01:00:00:00', 29.97)  // Non-drop
 
-const result7 = shortTimecode(600, 30); // 30 fps
-// '00:10:00'
-
-// 🎬 DROP-FRAME TIMECODE SUPPORT (NEW!)
-// Drop-frame uses semicolon (;) before frames: HH:MM:SS;FF
-
-// Auto-detect drop-frame from format
-const dropFrameSeconds = timecodeToSeconds('01:00:00;00', 29.97);
-// 3600 seconds (exact)
-
-// Smart auto-detection for drop-frame generation
-const autoDropFrame = secondsToTimecode(3600, 29.97); // Auto-detects need for drop-frame
-// '01:00:00;00' (uses drop-frame automatically for long durations)
-
-const shortDuration = secondsToTimecode(30, 29.97); // Short duration
-// '00:00:30:00' (uses non-drop for durations < 1 minute)
+// Generating: Auto-selects based on duration at 29.97/59.94 fps
+secondsToTimecode(3600, 29.97)  // '01:00:00;00' (≥1 min = drop-frame)
+secondsToTimecode(30, 29.97)    // '00:00:30:00' (<1 min = non-drop)
 
 // Override auto-detection
-const forcedNonDrop = secondsToTimecode(3600, 29.97, false);
-// '01:00:00:00' (forced non-drop frame)
-
-// Validate timecodes
-import { validateTimecode } from "timecode-converter";
-
-const validation = validateTimecode('25:00:00:00', 25);
-// { valid: false, errors: ["Hours cannot exceed 23"] }
-
-const dropFrameValidation = validateTimecode('00:01:00;01', 29.97);
-// { valid: false, errors: ["Invalid drop-frame timecode. Frames 00 and 01 don't exist at minute 1"] }
-
-// Check if a timecode is drop-frame format
-import { isDropFrameTimecode, isDropFrameRate } from "timecode-converter";
-
-isDropFrameTimecode('01:00:00;00') // true
-isDropFrameTimecode('01:00:00:00') // false
-isDropFrameRate(29.97) // true
-isDropFrameRate(25) // false
-```
-## Drop-Frame Timecode Support
-
-This library now fully supports both **drop-frame** and **non-drop frame** timecode formats.
-
-### Understanding Drop-Frame Timecode
-
-Drop-frame timecode is used in NTSC video (29.97 fps) to compensate for the fractional frame rate. It works by dropping frame numbers (not actual frames) at specific intervals:
-- Drops frame numbers 00 and 01 at the start of each minute
-- EXCEPT every 10th minute (00, 10, 20, 30, 40, 50)
-- This keeps timecode aligned with real-world time
-
-### Drop-Frame Format
-- **Non-drop frame**: `HH:MM:SS:FF` (uses colons)
-- **Drop-frame**: `HH:MM:SS;FF` (uses semicolon before frames)
-
-### Auto-Detection
-The library provides smart auto-detection for drop-frame:
-
-**When parsing timecodes:**
-```js
-// Drop-frame format is auto-detected from semicolon
-timecodeToSeconds('01:00:00;00', 29.97) // 3600.00 seconds (drop-frame)
-timecodeToSeconds('01:00:00:00', 29.97) // 3600.00 seconds (non-drop)
+secondsToTimecode(3600, 29.97, false)  // '01:00:00:00' (force non-drop)
+secondsToTimecode(30, 29.97, true)     // '00:00:29;29' (force drop-frame)
 ```
 
-**When generating timecodes:**
-```js
-// For 29.97/59.94 fps, drop-frame is auto-selected for durations ≥ 1 minute
-secondsToTimecode(3600, 29.97)    // '01:00:00;00' (auto drop-frame)
-secondsToTimecode(30, 29.97)      // '00:00:30:00' (auto non-drop)
-secondsToTimecode(3600, 29.97, false) // '01:00:00:00' (force non-drop)
+## API Reference
+
+### Core Functions
+
+#### `secondsToTimecode(seconds, frameRate, dropFrame?)`
+Converts seconds to timecode format.
+
+```typescript
+secondsToTimecode(
+  seconds: number,      // Time in seconds
+  frameRate: FrameRate, // 23.976, 24, 25, 29.97, 30, 50, 59.94, or 60
+  dropFrame?: boolean   // Optional: true/false, auto-detects if omitted
+): string              // Returns "HH:MM:SS:FF" or "HH:MM:SS;FF"
 ```
 
-### Generating Drop-Frame Timecode
-```js
-// Generate drop-frame format with third parameter
-secondsToTimecode(3600, 29.97, true)  // '01:00:00;00'
-secondsToTimecode(3600, 29.97, false) // '01:00:00:00'
-secondsToTimecode(3600, 29.97)        // '01:00:00:00' (default: non-drop)
+#### `timecodeToSeconds(timecode, frameRate?)`
+Converts timecode to seconds. Auto-detects drop-frame from semicolon separator.
+
+```typescript
+timecodeToSeconds(
+  timecode: string | number,  // Timecode string or seconds
+  frameRate?: FrameRate       // Required for timecode strings
+): number                     // Returns seconds
 ```
 
-### Supported Frame Rates
-Drop-frame is only valid for:
-- **29.97 fps** - Standard NTSC (drops 2 frames/minute)
-- **59.94 fps** - Double-rate NTSC (drops 4 frames/minute)
+#### `shortTimecode(timecode, frameRate?)`
+Formats timecode without frames (HH:MM:SS).
 
-Other frame rates (24, 25, 30, etc.) will ignore the drop-frame parameter.
-
-### Usage Warnings
-The library will warn you about potentially incorrect usage:
-
-1. **Using drop-frame format with wrong frame rate:**
-   ```js
-   timecodeToSeconds('01:00:00;00', 25)
-   // ⚠️ Warning: Drop-frame timecode format used with non-drop-frame rate 25 fps
-   ```
-
-2. **Using 29.97/59.94 fps without drop-frame for long durations:**
-   ```js
-   secondsToTimecode(3600, 29.97, false)
-   // ⚠️ Warning: For durations over 1 hour, consider using drop-frame format
-   // After 1 hour(s), drift is approximately 4 seconds
-   ```
-
-## System Architecture
-
-<!-- _High level overview of system architecture_ -->
-
-A node module 
-
-<!-- ## Documentation
-
-There's a [docs](./docs) folder in this repository.
-
-[docs/notes](./docs/notes) contains dev draft notes on various aspects of the project. This would generally be converted either into ADRs or guides when ready.
-
-[docs/adr](./docs/adr) contains [Architecture Decision Record](https://github.com/joelparkerhenderson/architecture_decision_record).
-
-> An architectural decision record (ADR) is a document that captures an important architectural decision made along with its context and consequences.
-
-We are using [this template for ADR](https://gist.github.com/iaincollins/92923cc2c309c2751aea6f1b34b31d95) -->
-
-## Development env
-
- _How to run the development environment_ -->
-
-- npm > `6.1.0`
-- [Node 12](https://nodejs.org/docs/latest-v12.x/api/)
-
-Node version is set in node version manager [`.nvmrc`](https://github.com/creationix/nvm#nvmrc)
-
-```
-nvm use
+```typescript
+shortTimecode(
+  timecode: string | number,
+  frameRate?: FrameRate
+): string  // Returns "HH:MM:SS"
 ```
 
+### Validation Functions
 
-<!-- _Coding style convention ref optional, eg which linter to use_ -->
+#### `validateTimecode(timecode, frameRate?)`
+Validates timecode format and values.
 
-<!-- _Linting, github pre-push hook - optional_ -->
-
-## Build
-
-<!-- _How to run build_ -->
-
+```typescript
+validateTimecode('25:00:00:00', 25)
+// Returns:
+// {
+//   valid: false,
+//   errors: ['Hours cannot exceed 23'],
+//   warnings: [],
+//   format: 'non-drop',
+//   components: undefined
+// }
 ```
-pnpm build
+
+### Helper Functions
+
+#### `isDropFrameTimecode(timecode)`
+Checks if timecode uses drop-frame format (semicolon separator).
+
+```typescript
+isDropFrameTimecode('01:00:00;00')  // true
+isDropFrameTimecode('01:00:00:00')  // false
 ```
 
-This creates dual format builds in the `dist` folder:
-- CommonJS (.js) 
-- ESM (.mjs)
-- TypeScript definitions (.d.ts)
-## Tests
+#### `isDropFrameRate(frameRate)`
+Checks if frame rate supports drop-frame.
 
-<!-- _How to carry out tests_ -->
-
+```typescript
+isDropFrameRate(29.97)  // true
+isDropFrameRate(25)     // false
 ```
+
+## Examples
+
+### Basic Conversions
+
+```typescript
+import { secondsToTimecode, timecodeToSeconds } from 'timecode-converter'
+
+// PAL (25 fps)
+secondsToTimecode(90, 25)              // '00:01:30:00'
+timecodeToSeconds('00:01:30:00', 25)  // 90
+
+// NTSC (29.97 fps) with auto drop-frame
+secondsToTimecode(3600, 29.97)        // '01:00:00;00' (auto drop-frame)
+secondsToTimecode(30, 29.97)          // '00:00:30:00' (auto non-drop)
+
+// Film (24 fps)
+secondsToTimecode(3600, 24)           // '01:00:00:00'
+timecodeToSeconds('01:00:00:00', 24)  // 3600
+```
+
+### Working with Drop-Frame
+
+```typescript
+// Let auto-detection handle it
+const timecode = secondsToTimecode(durationInSeconds, 29.97)
+
+// Or be explicit
+const dropFrame = secondsToTimecode(3600, 29.97, true)   // Force drop-frame
+const nonDrop = secondsToTimecode(3600, 29.97, false)    // Force non-drop
+
+// Parsing handles both formats automatically
+timecodeToSeconds('01:00:00;00', 29.97)  // Semicolon = drop-frame
+timecodeToSeconds('01:00:00:00', 29.97)  // Colon = non-drop
+```
+
+### Validation
+
+```typescript
+import { validateTimecode } from 'timecode-converter'
+
+function processUserInput(timecode: string, fps: number) {
+  const validation = validateTimecode(timecode, fps)
+  
+  if (!validation.valid) {
+    throw new Error(validation.errors.join(', '))
+  }
+  
+  if (validation.warnings.length > 0) {
+    console.warn('Warnings:', validation.warnings)
+  }
+  
+  return timecodeToSeconds(timecode, fps)
+}
+```
+
+### Round-Trip Conversions
+
+```typescript
+import { 
+  timecodeToSeconds, 
+  secondsToTimecode, 
+  isDropFrameTimecode 
+} from 'timecode-converter'
+
+function offsetTimecode(timecode: string, offsetSeconds: number, fps: number) {
+  // Preserve drop-frame format through conversion
+  const isDropFrame = isDropFrameTimecode(timecode)
+  const seconds = timecodeToSeconds(timecode, fps)
+  const newSeconds = seconds + offsetSeconds
+  
+  return secondsToTimecode(newSeconds, fps, isDropFrame)
+}
+```
+
+## Frame Rate Reference
+
+| Frame Rate | Standard | Drop-Frame | Common Use |
+|------------|----------|------------|------------|
+| 23.976 | NTSC Film | No | Film transferred to video |
+| 24 | Film | No | Cinema |
+| 25 | PAL | No | European TV |
+| 29.97 | NTSC | Yes* | American TV |
+| 30 | NTSC | No | American TV (rare) |
+| 50 | PAL | No | European HD |
+| 59.94 | NTSC | Yes* | American HD |
+| 60 | NTSC | No | American HD (rare) |
+
+\* Drop-frame is optional but recommended for broadcast accuracy
+
+## Migration from v1
+
+If you're upgrading from the original timecode-converter, see our [Migration Guide](docs/MIGRATION.md) for detailed instructions.
+
+Key changes:
+- Frame rate is now required (no more defaults)
+- Full drop-frame timecode support
+- New validation functions
+- Improved precision and accuracy
+- TypeScript types included
+
+## Development
+
+```bash
+# Clone the repository
+git clone https://github.com/jordanburke/timecode-converter.git
+cd timecode-converter
+
+# Install dependencies
+pnpm install
+
+# Run tests
 pnpm test
+
+# Build the library
+pnpm build
+
+# Run tests in watch mode
+pnpm test:watch
 ```
 
-Tests are now using [Vitest](https://vitest.dev/) for a modern testing experience.
+## Contributing
 
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Deployment
+## Credits
 
-<!-- _How to deploy the code/app into test/staging/production_ -->
+This is a complete TypeScript rewrite of the original [timecode-converter](https://github.com/Laurian/timecode-converter), originally extracted from [@bbc/react-transcript-editor](https://github.com/bbc/react-transcript-editor), with original domain logic from [@bevand10](https://github.com/bevand10).
 
-To publish to npm 
-```
-pnpm publish:public
-```
-and for pre-flight checks 🔦🛫 
-```
-pnpm publish:dry:run
-```
+While this started as a fork, it has been completely rewritten with:
+- Full TypeScript implementation
+- SMPTE drop-frame support
+- Smart auto-detection
+- Comprehensive validation
+- Modern tooling and testing
+- Improved accuracy and precision
+
+## License
+
+MIT

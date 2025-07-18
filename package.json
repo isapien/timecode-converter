@@ -1,7 +1,7 @@
 {
   "name": "timecode-converter",
   "version": "2.0.0",
-  "description": "A dependency-free timecode converter module for non-drop frame broadcast timecodes",
+  "description": "Modern TypeScript library for broadcast timecode conversions with full SMPTE drop-frame support",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -14,7 +14,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "docs/MIGRATION.md"
   ],
   "engines": {
     "node": ">=14.0.0"
@@ -39,8 +41,13 @@
     "video",
     "conversion",
     "SMPTE",
+    "drop-frame",
+    "dropframe",
     "fps",
-    "frames"
+    "frames",
+    "typescript",
+    "29.97",
+    "59.94"
   ],
   "author": "Jordan Burke <jordan.burke@gmail.com>",
   "license": "ISC",
